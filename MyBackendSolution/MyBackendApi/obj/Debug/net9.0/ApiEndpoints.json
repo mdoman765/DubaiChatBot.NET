@@ -1,0 +1,12 @@
+[
+  {
+    "ContainingType": "MyBackendApi.Controllers.HelloController",
+    "Method": "Get",
+    "RelativePath": "Hello",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]

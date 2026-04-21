@@ -1,0 +1,108 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Projects\\MyBackendSolution\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A25AC362-4D78-41CC-8865-B0AD04092624}|MyBackendApi\\MyBackendApi.csproj|d:\\projects\\mybackendsolution\\mybackendapi\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A25AC362-4D78-41CC-8865-B0AD04092624}|MyBackendApi\\MyBackendApi.csproj|solutionrelative:mybackendapi\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A25AC362-4D78-41CC-8865-B0AD04092624}|MyBackendApi\\MyBackendApi.csproj|d:\\projects\\mybackendsolution\\mybackendapi\\mybackendapi.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{A25AC362-4D78-41CC-8865-B0AD04092624}|MyBackendApi\\MyBackendApi.csproj|solutionrelative:mybackendapi\\mybackendapi.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A25AC362-4D78-41CC-8865-B0AD04092624}|MyBackendApi\\MyBackendApi.csproj|d:\\projects\\mybackendsolution\\mybackendapi\\controllers\\hellocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A25AC362-4D78-41CC-8865-B0AD04092624}|MyBackendApi\\MyBackendApi.csproj|solutionrelative:mybackendapi\\controllers\\hellocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A25AC362-4D78-41CC-8865-B0AD04092624}|MyBackendApi\\MyBackendApi.csproj|d:\\projects\\mybackendsolution\\mybackendapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A25AC362-4D78-41CC-8865-B0AD04092624}|MyBackendApi\\MyBackendApi.csproj|solutionrelative:mybackendapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1496678418:0:{81164725-9a96-4ece-a4cb-440d8fd285e5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{13b12e3e-c1b4-4539-9371-4fe9a0d523fc}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "D:\\Projects\\MyBackendSolution\\MyBackendApi\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "MyBackendApi\\Properties\\launchSettings.json",
+              "ToolTip": "D:\\Projects\\MyBackendSolution\\MyBackendApi\\Properties\\launchSettings.json",
+              "RelativeToolTip": "MyBackendApi\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-02-24T11:17:53.622Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MyBackendApi",
+              "DocumentMoniker": "D:\\Projects\\MyBackendSolution\\MyBackendApi\\MyBackendApi.csproj",
+              "RelativeDocumentMoniker": "MyBackendApi\\MyBackendApi.csproj",
+              "ToolTip": "D:\\Projects\\MyBackendSolution\\MyBackendApi\\MyBackendApi.csproj",
+              "RelativeToolTip": "MyBackendApi\\MyBackendApi.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-02-24T11:17:52.041Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\Projects\\MyBackendSolution\\MyBackendApi\\Program.cs",
+              "RelativeDocumentMoniker": "MyBackendApi\\Program.cs",
+              "ToolTip": "D:\\Projects\\MyBackendSolution\\MyBackendApi\\Program.cs",
+              "RelativeToolTip": "MyBackendApi\\Program.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABgAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-24T11:14:18.481Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "HelloController.cs",
+              "DocumentMoniker": "D:\\Projects\\MyBackendSolution\\MyBackendApi\\Controllers\\HelloController.cs",
+              "RelativeDocumentMoniker": "MyBackendApi\\Controllers\\HelloController.cs",
+              "ToolTip": "D:\\Projects\\MyBackendSolution\\MyBackendApi\\Controllers\\HelloController.cs",
+              "RelativeToolTip": "MyBackendApi\\Controllers\\HelloController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-24T11:13:40.242Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
