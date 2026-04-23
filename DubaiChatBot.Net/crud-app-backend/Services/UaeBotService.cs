@@ -129,7 +129,7 @@ namespace crud_app_backend.Bot.Services
             if (s.State == "AWAITING_RETURN_CONFIRM" && msg.RawText == "y")
                 return s.T("⏳ Submitting return request...", "⏳ রিটার্ন জমা হচ্ছে...", "⏳ वापसी जमा हो रही है...");
 
-            if (s.State == "AWAITING_AGENT_CONFIRM_2" && msg.RawText == "1")
+            if (s.State == "AWAITING_AGENT_CONFIRM_1" && msg.RawText == "y")
                 return s.T("⏳ Connecting to agent...", "⏳ এজেন্টের সাথে সংযোগ...", "⏳ एजेंट से जोड़ा जा रहा है...");
 
             if (s.State == "AWAITING_ORDER_TRACKING" && msg.MsgType == "text")
@@ -177,7 +177,6 @@ namespace crud_app_backend.Bot.Services
                 if (msg.MsgType == "text" && raw == "s")
                 {
                     Transition(s, "AWAITING_AGENT_CONFIRM_1");
-                    s.AgentConfirmStep = 1;
                     return BuildAgentConfirm1(s);
                 }
             }
@@ -198,8 +197,8 @@ namespace crud_app_backend.Bot.Services
                 "AWAITING_RETURN_CONFIRM" => await HandleReturnConfirmAsync(s, msg),
                 "AWAITING_COMPLAINT_DETAILS" => await HandleMediaDetailsAsync(s, msg, "complaint"),
                 "AWAITING_COMPLAINT_CONFIRM" => await HandleComplaintConfirmAsync(s, msg),
-                "AWAITING_AGENT_CONFIRM_1" => HandleAgentConfirm1(s, msg),
-                "AWAITING_AGENT_CONFIRM_2" => await HandleAgentConfirm2Async(s, msg),
+                "AWAITING_AGENT_CONFIRM_1" => await HandleAgentConfirm1Async(s, msg),
+                "AWAITING_AGENT_CONFIRM_2" => await HandleAgentConfirm1Async(s, msg), // fallback — no second step
                 "AWAITING_AREA_INPUT" => HandleAreaInput(s, msg),
                 "AWAITING_ORDER_TRACKING" => await HandleOrderTrackingAsync(s, msg),
                 _ => BuildMainMenu(s),
@@ -221,16 +220,15 @@ namespace crud_app_backend.Bot.Services
                 case "3": s.Lang = "hi"; break;
                 default:
                     return
-                        "❌ Invalid input. Please reply with *1*, *2* or *3*.\n" +
-                        "❌ অবৈধ ইনপুট। *1*, *2* অথবা *3* পাঠান।\n\n" +
+                        "❌ Invalid. Reply *1*, *2* or *3*.\n\n" +
                         LangPrompt();
             }
 
             Transition(s, "AWAITING_SHOP_CODE");
             return s.T(
-                "✅ Language set to *English*.\n\nPlease enter your *Shop Code* to continue.\nExample: *20100090*",
-                "✅ ভাষা বাংলায় সেট হয়েছে।\n\nঅনুগ্রহ করে আপনার *শপ কোড* দিন।\nউদাহরণ: *20100090*",
-                "✅ भाषा हिंदी में सेट है।\n\nकृपया अपना *शॉप कोड* दर्ज करें।\nउदाहरण: *20100090*");
+                "✅ Language: *English*\n\n👉 Enter your *Shop Code*.\nExample: *20100090*",
+                "✅ ভাষা: *বাংলা*\n\n👉 আপনার *শপ কোড* দিন।\nউদাহরণ: *20100090*",
+                "✅ भाषा: *हिंदी*\n\n👉 अपना *शॉप कोड* दर्ज करें।\nउदाहरण: *20100090*");
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -241,9 +239,9 @@ namespace crud_app_backend.Bot.Services
         {
             if (msg.MsgType != "text" || string.IsNullOrWhiteSpace(msg.RawText))
                 return s.T(
-                    "Please enter your *Shop Code*.\nExample: *20100090*",
-                    "আপনার *শপ কোড* দিন।\nউদাহরণ: *20100090*",
-                    "अपना *शॉप कोड* दर्ज करें।\nउदाहरण: *20100090*");
+                    "👉 Enter your *Shop Code*.\nExample: *20100090*",
+                    "👉 আপনার *শপ কোড* দিন।\nউদাহরণ: *20100090*",
+                    "👉 अपना *शॉप कोड* दर्ज करें।\nउदाहरण: *20100090*");
 
             var code = msg.RawText.Trim();
             var shop = await _spror.ValidateShopAsync(code);
@@ -251,9 +249,9 @@ namespace crud_app_backend.Bot.Services
             if (shop == null)
             {
                 return s.T(
-                    $"❌ *Shop Code not found.*\n\n*{code}* was not recognised.\nPlease check and try again.\nExample: *20100090*",
-                    $"❌ *শপ কোড পাওয়া যায়নি।*\n\n*{code}* সঠিক নয়।\nঅনুগ্রহ করে আবার চেষ্টা করুন।\nউদাহরণ: *20100090*",
-                    $"❌ *शॉप कोड नहीं मिला।*\n\n*{code}* सही नहीं है।\nकृपया पुनः प्रयास करें।\nउदाहरण: *20100090*");
+                    $"❌ *Shop Code not found.*\n\n*{code}* is not recognised.\n\n👉 Check and try again.\nExample: *20100090*",
+                    $"❌ *শপ কোড পাওয়া যায়নি।*\n\n*{code}* সঠিক নয়।\n\n👉 আবার চেষ্টা করুন।\nউদাহরণ: *20100090*",
+                    $"❌ *शॉप कोड नहीं मिला।*\n\n*{code}* सही नहीं।\n\n👉 पुनः प्रयास करें।\nउदाहरण: *20100090*");
             }
 
             s.ShopVerified = true;
@@ -282,17 +280,17 @@ namespace crud_app_backend.Bot.Services
         private static string BuildMainMenuBody(string lang) => lang switch
         {
             "bn" =>
-                "🏪 *Pran-RFL UAE Customer Support*\n\n" +
+                "🏪 *PRAN-RFL UAE Sales Support*\n\n" +
                 "1️⃣  অর্ডার দিন\n" +
                 "2️⃣  রিটার্ন / রিপ্লেসমেন্ট\n" +
                 "3️⃣  অভিযোগ / ফিডব্যাক\n" +
                 "4️⃣  সাপোর্ট এজেন্ট\n" +
                 "5️⃣  সেলসম্যানের নম্বর\n" +
-                "6️⃣  অর্ডার ট্র্যাক করুন\n" +
+                "6️⃣  অর্ডার ট্র্যাক\n" +
                 "0️⃣  ভাষা পরিবর্তন\n\n" +
-                "1–6 বা 0 পাঠান।",
+                "👉 *1* থেকে *6* বা *0* পাঠান।",
             "hi" =>
-                "🏪 *Pran-RFL UAE Customer Support*\n\n" +
+                "🏪 *PRAN-RFL UAE Sales Support*\n\n" +
                 "1️⃣  ऑर्डर करें\n" +
                 "2️⃣  वापसी / प्रतिस्थापन\n" +
                 "3️⃣  शिकायत / फ़ीडबैक\n" +
@@ -300,17 +298,17 @@ namespace crud_app_backend.Bot.Services
                 "5️⃣  सेल्समैन नंबर\n" +
                 "6️⃣  ऑर्डर ट्रैक करें\n" +
                 "0️⃣  भाषा बदलें\n\n" +
-                "1–6 या 0 भेजें।",
+                "👉 *1* से *6* या *0* भेजें।",
             _ =>
-                "🏪 *Pran-RFL UAE Customer Support*\n\n" +
+                "🏪 *PRAN-RFL UAE Sales Support*\n\n" +
                 "1️⃣  Place Order\n" +
                 "2️⃣  Return / Replacement\n" +
                 "3️⃣  Complaint / Feedback\n" +
-                "4️⃣  Talk to Support Agent\n" +
+                "4️⃣  Connect with Support Agent\n" +
                 "5️⃣  Check Salesman Number\n" +
                 "6️⃣  Track Order\n" +
-                "0️⃣  Back to Language Menu\n\n" +
-                "Reply with 1–6 or 0.",
+                "0️⃣  Change Language\n\n" +
+                "👉 Reply *1*, *2*, *3*, *4*, *5*, *6* or *0*.",
         };
 
         private async Task<string> HandleMainMenu(UaeSession s, UaeIncomingMessage msg)
@@ -432,9 +430,9 @@ namespace crud_app_backend.Bot.Services
                 $"{p.Name}  *{p.Price:F3} SAR*").ToList();
 
             return BuildNumberedList(
-                s.T($"*{s.SelectedCatName} > {s.SelectedSubcatName}*",
-                    $"*{s.SelectedCatName} > {s.SelectedSubcatName}*",
-                    $"*{s.SelectedCatName} > {s.SelectedSubcatName}*"),
+                s.T($"*{s.SelectedCatName} > {s.SelectedSubcatName}*\n\nEnter product number to select:",
+                    $"*{s.SelectedCatName} > {s.SelectedSubcatName}*\n\nপণ্য নম্বর দিয়ে নির্বাচন করুন:",
+                    $"*{s.SelectedCatName} > {s.SelectedSubcatName}*\n\nउत्पाद संख्या दर्ज करके चुनें:"),
                 lines,
                 s.T("0  Back to Subcategories", "0  সাবক্যাটাগরিতে ফিরুন", "0  उपश्रेणी में वापस"),
                 s.Cart);
@@ -486,9 +484,9 @@ namespace crud_app_backend.Bot.Services
 
             Transition(s, "AWAITING_QTY");
             return s.T(
-                $"*{s.PendingCartName}* — {s.PendingCartPrice:F3} SAR per unit\n\nHow many units?\n\n0  Back to Products",
-                $"*{s.PendingCartName}* — {s.PendingCartPrice:F3} SAR\n\nকত পিস লাগবে?\n\n0  পণ্যে ফিরুন",
-                $"*{s.PendingCartName}* — {s.PendingCartPrice:F3} SAR\n\nकितनी यूनिट चाहिए?\n\n0  उत्पाद में वापस");
+                $"*{s.PendingCartName}* — {s.PendingCartPrice:F3} SAR per unit\n\nHow many units?\n\n0  Back to Products\nS  Connect to Support Agent",
+                $"*{s.PendingCartName}* — {s.PendingCartPrice:F3} SAR\n\nকত পিস লাগবে?\n\n0  পণ্যে ফিরুন\nS  এজেন্টের সাথে যোগাযোগ",
+                $"*{s.PendingCartName}* — {s.PendingCartPrice:F3} SAR\n\nकितनी यूनिट चाहिए?\n\n0  उत्पाद में वापस\nS  एजेंट से जुड़ें");
         }
 
         private string HandleQty(UaeSession s, UaeIncomingMessage msg)
@@ -664,22 +662,19 @@ namespace crud_app_backend.Bot.Services
             Transition(s, "AWAITING_RETURN_DETAILS");
             return s.T(
                 "🔄 *Return / Replacement*\n\n" +
-                "Please send details of the product you want to return.\n\n" +
-                "You can send:\n" +
-                "💬 *Text* — describe the issue\n" +
-                "📷 *Image* — photo of the product\n" +
-                "🎙 *Voice* — voice note\n\n" +
-                "0  Back to Main Menu",
+                "Tell us the product you want to return.\n\n" +
+                "Send *Text*, *Image*, or *Voice*\n\n" +
+                "👉 Send *0* to go back to main menu",
 
                 "🔄 *রিটার্ন / রিপ্লেসমেন্ট*\n\n" +
-                "যে পণ্যটি ফেরত দিতে চান তার বিবরণ পাঠান।\n\n" +
-                "💬 *টেক্সট*  📷 *ছবি*  🎙 *ভয়েস*\n\n" +
-                "0  মূল মেনু",
+                "যে পণ্যটি ফেরত দিতে চান তা জানান।\n\n" +
+                "*টেক্সট*, *ছবি* বা *ভয়েস* পাঠান\n\n" +
+                "👉 মূল মেনুতে ফিরতে *0* পাঠান",
 
                 "🔄 *वापसी / प्रतिस्थापन*\n\n" +
-                "जो उत्पाद वापस करना है उसका विवरण भेजें।\n\n" +
-                "💬 *टेक्स्ट*  📷 *फ़ोटो*  🎙 *आवाज़*\n\n" +
-                "0  मुख्य मेनू");
+                "जो उत्पाद वापस करना है उसके बारे में बताएं।\n\n" +
+                "*टेक्स्ट*, *फ़ोटो* या *आवाज़* भेजें\n\n" +
+                "👉 मुख्य मेनू पर जाने के लिए *0* भेजें");
         }
 
         private async Task<string> HandleReturnConfirmAsync(UaeSession s, UaeIncomingMessage msg)
@@ -705,19 +700,19 @@ namespace crud_app_backend.Bot.Services
             Transition(s, "AWAITING_COMPLAINT_DETAILS");
             return s.T(
                 "📝 *Complaint / Feedback*\n\n" +
-                "Please send your complaint or feedback.\n\n" +
-                "💬 *Text*  📷 *Image*  🎙 *Voice*\n\n" +
-                "0  Back to Main Menu",
+                "Tell us your problem.\n\n" +
+                "Send *Text*, *Image*, or *Voice*\n\n" +
+                "👉 Send *0* to go back to main menu",
 
                 "📝 *অভিযোগ / ফিডব্যাক*\n\n" +
-                "আপনার অভিযোগ বা মতামত পাঠান।\n\n" +
-                "💬 *টেক্সট*  📷 *ছবি*  🎙 *ভয়েস*\n\n" +
-                "0  মূল মেনু",
+                "আপনার সমস্যা জানান।\n\n" +
+                "*টেক্সট*, *ছবি* বা *ভয়েস* পাঠান\n\n" +
+                "👉 মূল মেনুতে ফিরতে *0* পাঠান",
 
                 "📝 *शिकायत / फ़ीडबैक*\n\n" +
-                "अपनी शिकायत या राय भेजें।\n\n" +
-                "💬 *टेक्स्ट*  📷 *फ़ोटो*  🎙 *आवाज़*\n\n" +
-                "0  मुख्य मेनू");
+                "अपनी समस्या बताएं।\n\n" +
+                "*टेक्स्ट*, *फ़ोटो* या *आवाज़* भेजें\n\n" +
+                "👉 मुख्य मेनू पर जाने के लिए *0* भेजें");
         }
 
         private async Task<string> HandleComplaintConfirmAsync(UaeSession s, UaeIncomingMessage msg)
@@ -795,15 +790,18 @@ namespace crud_app_backend.Bot.Services
 
             return s.T(
                 "✅ *Received.*\n\n" +
-                "Send *Y* to submit  |  *N* to cancel and re-send\n\n" +
-                "Or add more: send another *image*, *voice* or *text*",
+                "Send *Y* to submit\n" +
+                "Send *N* to cancel\n\n" +
+                "To add more details, send another *Image*, *Voice* or *Text*",
 
                 "✅ *পাওয়া গেছে।*\n\n" +
-                "জমা দিতে *Y*  |  বাতিল করতে *N*\n\n" +
-                "আরও যোগ করতে আরেকটি *ছবি*, *ভয়েস* বা *টেক্সট* পাঠান",
+                "*Y* পাঠান জমা দিতে\n" +
+                "*N* পাঠান বাতিল করতে\n\n" +
+                "আরও যোগ করতে *ছবি*, *ভয়েস* বা *টেক্সট* পাঠান",
 
                 "✅ *प्राप्त हुआ।*\n\n" +
-                "जमा करने के लिए *Y*  |  रद्द करने के लिए *N*\n\n" +
+                "जमा करने के लिए *Y* भेजें\n" +
+                "रद्द करने के लिए *N* भेजें\n\n" +
                 "अधिक जोड़ने के लिए *फ़ोटो*, *आवाज़* या *टेक्स्ट* भेजें");
         }
 
@@ -835,19 +833,22 @@ namespace crud_app_backend.Bot.Services
 
             return s.T(
                 $"✅ *{ticketLabel} Submitted*\n\n" +
-                (result.TicketId != null ? $"Ticket ID : {result.TicketId}\n" : "") +
-                "Our team will respond shortly.\n\n" +
-                "*menu*  Back to Main Menu  |  *S*  Talk to Agent",
+                (result.TicketId != null ? $"Ticket ID : *{result.TicketId}*\n\n" : "") +
+                "Our team will contact you shortly.\n\n" +
+                "👉 Send *menu* for Main Menu\n" +
+                "👉 Send *S* to connect with Agent",
 
                 $"✅ *{ticketLabel} জমা হয়েছে*\n\n" +
-                (result.TicketId != null ? $"টিকেট আইডি : {result.TicketId}\n" : "") +
+                (result.TicketId != null ? $"টিকেট আইডি : *{result.TicketId}*\n\n" : "") +
                 "আমাদের টিম শীঘ্রই যোগাযোগ করবে।\n\n" +
-                "*menu*  মূল মেনু  |  *S*  এজেন্ট",
+                "👉 *menu* — মূল মেনু\n" +
+                "👉 *S* — এজেন্টের সাথে যোগাযোগ",
 
                 $"✅ *{ticketLabel} जमा हुआ*\n\n" +
-                (result.TicketId != null ? $"टिकट ID : {result.TicketId}\n" : "") +
+                (result.TicketId != null ? $"टिकट ID : *{result.TicketId}*\n\n" : "") +
                 "हमारी टीम जल्द संपर्क करेगी।\n\n" +
-                "*menu*  मुख्य मेनू  |  *S*  एजेंट");
+                "👉 *menu* — मुख्य मेनू\n" +
+                "👉 *S* — एजेंट से जुड़ें");
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -856,63 +857,78 @@ namespace crud_app_backend.Bot.Services
 
         private string StartAgent(UaeSession s)
         {
-            s.AgentConfirmStep = 1;
             Transition(s, "AWAITING_AGENT_CONFIRM_1");
             return BuildAgentConfirm1(s);
         }
 
         private string BuildAgentConfirm1(UaeSession s) =>
             s.T(
-                "📞 *Talk to Support Agent*\n\n" +
-                "Do you want to connect with a support agent?\n\n" +
-                "1  Yes — Connect Me Now\n" +
-                "2  No  — Go Back\n\n" +
-                "0  Back to Main Menu",
+                "📞 *Connect with Support Agent*\n\n" +
+                "Our support agent will contact you after confirmation.\n\n" +
+                "Send *Y* to Confirm\n" +
+                "Send *N* to Cancel\n\n" +
+                "👉 Send *0* to go back to main menu",
 
                 "📞 *সাপোর্ট এজেন্ট*\n\n" +
-                "এজেন্টের সাথে কথা বলতে চান?\n\n" +
-                "1  হ্যাঁ\n2  না\n\n0  মূল মেনু",
+                "নিশ্চিত করলে এজেন্ট আপনার সাথে যোগাযোগ করবে।\n\n" +
+                "নিশ্চিত করতে *Y* পাঠান\n" +
+                "বাতিল করতে *N* পাঠান\n\n" +
+                "👉 মূল মেনুতে যেতে *0* পাঠান",
 
                 "📞 *सपोर्ट एजेंट*\n\n" +
-                "क्या आप एजेंट से जुड़ना चाहते हैं?\n\n" +
-                "1  हाँ\n2  नहीं\n\n0  मुख्य मेनू");
+                "पुष्टि के बाद हमारा एजेंट आपसे संपर्क करेगा।\n\n" +
+                "*Y* भेजें पुष्टि करने के लिए\n" +
+                "*N* भेजें रद्द करने के लिए\n\n" +
+                "👉 मुख्य मेनू पर जाने के लिए *0* भेजें");
 
-        private string HandleAgentConfirm1(UaeSession s, UaeIncomingMessage msg)
-        {
-            if (msg.RawText == "1")
-            {
-                Transition(s, "AWAITING_AGENT_CONFIRM_2");
-                return s.T(
-                    "⚠️ *Confirm Request*\n\n" +
-                    "You are about to be connected to a live support agent.\n\n" +
-                    "1  Confirm — Submit Request\n" +
-                    "2  Cancel\n\n" +
-                    "0  Back to Main Menu",
-
-                    "⚠️ *নিশ্চিত করুন*\n\n" +
-                    "আপনি একজন লাইভ এজেন্টের সাথে সংযুক্ত হতে চলেছেন।\n\n" +
-                    "1  নিশ্চিত করুন\n2  বাতিল\n\n0  মূল মেনু",
-
-                    "⚠️ *पुष्टि करें*\n\n" +
-                    "आप एक लाइव एजेंट से जुड़ने वाले हैं।\n\n" +
-                    "1  पुष्टि करें\n2  रद्द करें\n\n0  मुख्य मेनू");
-            }
-            if (msg.RawText == "2" || msg.RawText == "0") return BuildMainMenu(s);
-            return BuildUnknown(s);
-        }
-
-        private async Task<string> HandleAgentConfirm2Async(
+        // Single-step: Y = connect immediately, N/0 = back
+        private async Task<string> HandleAgentConfirm1Async(
             UaeSession s, UaeIncomingMessage msg)
         {
-            if (msg.RawText == "2" || msg.RawText == "0") return BuildMainMenu(s);
-            if (msg.RawText != "1") return BuildUnknown(s);
+            if (msg.RawText == "y") return await ConnectAgentAsync(s);
+            if (msg.RawText == "n" || msg.RawText == "0") return BuildMainMenu(s);
+            return BuildAgentConfirm1(s); // re-show menu on invalid input
+        }
+
+        // Submits agent request to CRM with cart + category context
+        private async Task<string> ConnectAgentAsync(UaeSession s)
+        {
+            // Build description from browsing context + cart
+            var desc = new System.Text.StringBuilder("User requested live agent support.");
+
+            if (!string.IsNullOrEmpty(s.SelectedCatName))
+            {
+                desc.Append($" Category: {s.SelectedCatName}");
+                if (!string.IsNullOrEmpty(s.SelectedSubcatName))
+                    desc.Append($" > {s.SelectedSubcatName}");
+            }
+
+            if (s.Cart.Any())
+            {
+                desc.Append(" | Cart: ");
+                desc.Append(string.Join(", ",
+                    s.Cart.Select(c => $"{c.Name} x{c.Qty} ({c.Amount:F3} SAR)")));
+                desc.Append($" | Total: {s.Cart.Sum(c => c.Amount):F3} SAR");
+            }
 
             var req = new UaeCrmRequest
             {
                 ShopCode = s.ShopCode ?? "",
                 WhatsappNumber = s.Phone,
                 TicketType = "connect_to_agent",
-                Description = "User requested live agent support",
+                Description = desc.ToString(),
+                CartItems = s.Cart.Any()
+                    ? JsonSerializer.Serialize(s.Cart.Select(c => new
+                    {
+                        product_id = c.Pid,
+                        product_name = c.Name,
+                        product_code = c.ProductCode,
+                        product_price = c.Price,
+                        product_quantity = c.Qty,
+                        amount = c.Amount,
+                        factor = c.Factor,
+                    }))
+                    : "",
             };
 
             var result = await _crm.SubmitAsync(req);
@@ -920,21 +936,22 @@ namespace crud_app_backend.Bot.Services
 
             return result.Success
                 ? s.T(
-                    "✅ *Request Submitted*\n\n" +
-                    "A support agent has been notified.\n" +
-                    "You will be contacted shortly.\n\n" +
-                    "Typical response: 5–15 min during business hours.\n\n" +
-                    "*menu*  Back to Main Menu",
+                    "✅ *Agent Request Submitted*\n\n" +
+                    (result.TicketId != null ? $"Ticket ID : *{result.TicketId}*\n\n" : "") +
+                    "A support agent will contact you shortly.\n\n" +
+                    "👉 Send *menu* for Main Menu",
 
                     "✅ *অনুরোধ পাঠানো হয়েছে*\n\n" +
+                    (result.TicketId != null ? $"টিকেট আইডি : *{result.TicketId}*\n\n" : "") +
                     "একজন এজেন্ট শীঘ্রই যোগাযোগ করবে।\n\n" +
-                    "*menu*  মূল মেনু",
+                    "👉 *menu* — মূল মেনু",
 
                     "✅ *अनुरोध भेजा गया*\n\n" +
-                    "एक एजेंट जल्द संपर्क करेगा।\n\n" +
-                    "*menu*  मुख्य मेनू")
+                    (result.TicketId != null ? $"टिकट ID : *{result.TicketId}*\n\n" : "") +
+                    "एक एजेंट जल्द आपसे संपर्क करेगा।\n\n" +
+                    "👉 *menu* — मुख्य मेनू")
                 : s.T(
-                    $"❌ Request failed.\n{result.Error}\n\nSend *1* to retry.",
+                    $"❌ Request failed.\n{result.Error}\n\nSend *S* to retry.",
                     $"❌ ব্যর্থ।\n{result.Error}",
                     $"❌ विफल।\n{result.Error}");
         }
@@ -1003,9 +1020,9 @@ namespace crud_app_backend.Bot.Services
         {
             Transition(s, "AWAITING_ORDER_TRACKING");
             return s.T(
-                "📦 *Track Order*\n\nReply *1* to view all your orders.\n\n0  Back to Main Menu",
-                "📦 *অর্ডার ট্র্যাক*\n\nসব অর্ডার দেখতে *1* পাঠান।\n\n0  মূল মেনু",
-                "📦 *ऑर्डर ट्रैक करें*\n\nसभी ऑर्डर देखने के लिए *1* भेजें।\n\n0  मुख्य मेनू");
+                "📦 *Track Order*\n\n👉 Send *1* to view your orders.\n\nSend *0* to go back.",
+                "📦 *অর্ডার ট্র্যাক*\n\n👉 অর্ডার দেখতে *1* পাঠান।\n\n*0* পাঠান ফিরতে।",
+                "📦 *ऑर्डर ट्रैक*\n\n👉 ऑर्डर देखने के लिए *1* भेजें।\n\n*0* भेजें वापस जाने के लिए।");
         }
 
         private async Task<string> HandleOrderTrackingAsync(
@@ -1024,11 +1041,16 @@ namespace crud_app_backend.Bot.Services
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                JsonElement dataEl = root.ValueKind == JsonValueKind.Array
-                    ? root
-                    : root.TryGetProperty("data", out var d) ? d : default;
+                // Response: root → data (paginated object) → data (array of orders)
+                if (!root.TryGetProperty("data", out var outerData) ||
+                    outerData.ValueKind != JsonValueKind.Object)
+                    return s.T("📦 No orders found.\n\n*menu*  Main Menu",
+                               "📦 কোনো অর্ডার নেই।\n\n*menu*  মূল মেনু",
+                               "📦 कोई ऑर्डर नहीं।\n\n*menu*  मुख्य मेनू");
 
-                if (dataEl.ValueKind != JsonValueKind.Array || dataEl.GetArrayLength() == 0)
+                if (!outerData.TryGetProperty("data", out var dataEl) ||
+                    dataEl.ValueKind != JsonValueKind.Array ||
+                    dataEl.GetArrayLength() == 0)
                     return s.T("📦 No orders found.\n\n*menu*  Main Menu",
                                "📦 কোনো অর্ডার নেই।\n\n*menu*  মূল মেনু",
                                "📦 कोई ऑर्डर नहीं।\n\n*menu*  मुख्य मेनू");
@@ -1037,17 +1059,39 @@ namespace crud_app_backend.Bot.Services
                 int i = 1;
                 foreach (var order in dataEl.EnumerateArray())
                 {
-                    var oid = order.TryGetProperty("order_id", out var o) ? o.ToString() : "-";
-                    var status = order.TryGetProperty("order_status", out var st) ? st.ToString() : "-";
-                    var total = order.TryGetProperty("total_amount", out var ta) ? ta.ToString() : "-";
-                    lines.Add($"{i++}. {oid}  |  {status}  |  {total} SAR");
+                    // Actual field names from API response
+                    var oid = order.TryGetProperty("ordm_ornm", out var o) ? o.ToString() : "-";
+                    var date = order.TryGetProperty("ordm_date", out var dt) ? dt.ToString() : "";
+                    var status = order.TryGetProperty("status", out var st) ? st.ToString() : "-";
+                    var total = order.TryGetProperty("ordm_amnt", out var ta) ? ta.ToString() : "-";
+
+                    // Product summary from nested products array
+                    var productLines = new List<string>();
+                    if (order.TryGetProperty("products", out var prods) &&
+                        prods.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var p in prods.EnumerateArray())
+                        {
+                            var pname = p.TryGetProperty("name", out var pn) ? pn.ToString() : "";
+                            var qty = p.TryGetProperty("ordd_qnty", out var pq) ? pq.ToString() : "";
+                            if (!string.IsNullOrEmpty(pname))
+                                productLines.Add($"   • {pname} x{qty}");
+                        }
+                    }
+
+                    var productSummary = productLines.Any()
+                        ? "\n" + string.Join("\n", productLines)
+                        : "";
+
+                    lines.Add($"{i}. *{oid}*  {date}\n   {status}  |  {total} SAR{productSummary}");
+                    i++;
                     if (i > 10) { lines.Add("..."); break; }
                 }
 
                 return s.T(
-                    $"📦 *Your Orders*\n\n{string.Join("\n", lines)}\n\n*menu*  Main Menu",
-                    $"📦 *আপনার অর্ডার*\n\n{string.Join("\n", lines)}\n\n*menu*  মূল মেনু",
-                    $"📦 *आपके ऑर्डर*\n\n{string.Join("\n", lines)}\n\n*menu*  मुख्य मेनू");
+                    $"📦 *Your Orders*\n\n{string.Join("\n\n", lines)}\n\n*menu*  Main Menu",
+                    $"📦 *আপনার অর্ডার*\n\n{string.Join("\n\n", lines)}\n\n*menu*  মূল মেনু",
+                    $"📦 *आपके ऑर्डर*\n\n{string.Join("\n\n", lines)}\n\n*menu*  मुख्य मेनू");
             }
             catch
             {
@@ -1070,8 +1114,12 @@ namespace crud_app_backend.Bot.Services
         }
 
         private static string LangPrompt() =>
-            "🌐 *Pran-RFL UAE*\n\nPlease choose your language:\n\n" +
-            "1️⃣  English\n2️⃣  বাংলা\n3️⃣  हिंदी\n\nReply 1, 2 or 3.";
+            "👋 Hi! I'm *PRAN-RFL UAE Sales Support*\n\n" +
+            "Please choose your language:\n\n" +
+            "1️⃣  English\n" +
+            "2️⃣  বাংলা\n" +
+            "3️⃣  हिंदी\n\n" +
+            "👉 Reply *1*, *2* or *3*.";
 
         // ─────────────────────────────────────────────────────────────────────
         // MEDIA SAVE
@@ -1206,9 +1254,9 @@ namespace crud_app_backend.Bot.Services
 
         private string BuildUnknown(UaeSession s) =>
             s.T(
-                "❓ *Invalid input.*\n\nType *menu* to go to Main Menu.",
-                "❓ *অবৈধ ইনপুট।*\n\n*menu* লিখুন।",
-                "❓ *अमान्य इनपुट।*\n\n*menu* टाइप करें।");
+                "❌ *Invalid input.*\n\n👉 Send *menu* to go to Main Menu.",
+                "❌ *অবৈধ ইনপুট।*\n\n👉 *menu* পাঠান।",
+                "❌ *अमान्य इनपुट।*\n\n👉 *menu* भेजें।");
 
         private string BuildCartAddedMessage(UaeSession s, UaeCartItem item)
         {
@@ -1221,15 +1269,15 @@ namespace crud_app_backend.Bot.Services
             return s.T(
                 $"✅ *Added to Cart*\n\n{item.Name} x{item.Qty} = {item.Amount:F3} SAR" +
                 $"{cartLines}\n\n💰 *Total: {total:F3} SAR*\n\n" +
-                "1  Add More Products\nC  View Full Cart\nX  Checkout & Place Order\n0  Back to Categories",
+                "1  Add More Products\nC  View Full Cart\nX  Checkout & Place Order\n0  Back to Categories\nS  Connect to Support Agent",
 
                 $"✅ *কার্টে যোগ হয়েছে*\n\n{item.Name} x{item.Qty} = {item.Amount:F3} SAR" +
                 $"{cartLines}\n\n💰 *মোট: {total:F3} SAR*\n\n" +
-                "1  আরও পণ্য\nC  কার্ট দেখুন\nX  চেকআউট\n0  ক্যাটাগরিতে ফিরুন",
+                "1  আরও পণ্য\nC  কার্ট দেখুন\nX  চেকআউট\n0  ক্যাটাগরিতে ফিরুন\nS  এজেন্টের সাথে যোগাযোগ",
 
                 $"✅ *कार्ट में जोड़ा*\n\n{item.Name} x{item.Qty} = {item.Amount:F3} SAR" +
                 $"{cartLines}\n\n💰 *कुल: {total:F3} SAR*\n\n" +
-                "1  और उत्पाद\nC  कार्ट देखें\nX  चेकआउट\n0  श्रेणी में वापस");
+                "1  और उत्पाद\nC  कार्ट देखें\nX  चेकआउट\n0  श्रेणी में वापस\nS  एजेंट से जुड़ें");
         }
 
         private string BuildCartView(UaeSession s)
@@ -1247,13 +1295,13 @@ namespace crud_app_backend.Bot.Services
 
             return s.T(
                 $"🛒 *Your Cart*\n\n{string.Join("\n", lines)}\n\n💰 *Total: {total:F3} SAR*\n\n" +
-                "X  Checkout & Place Order\n1  Add More Products\nC  Clear Cart\n0  Back",
+                "X  Checkout & Place Order\n1  Add More Products\nC  Clear Cart\n0  Back\nS  Connect to Support Agent",
 
                 $"🛒 *আপনার কার্ট*\n\n{string.Join("\n", lines)}\n\n💰 *মোট: {total:F3} SAR*\n\n" +
-                "X  চেকআউট\n1  আরও পণ্য\nC  কার্ট খালি করুন\n0  ফিরুন",
+                "X  চেকআউট\n1  আরও পণ্য\nC  কার্ট খালি করুন\n0  ফিরুন\nS  এজেন্টের সাথে যোগাযোগ",
 
                 $"🛒 *आपका कार्ट*\n\n{string.Join("\n", lines)}\n\n💰 *कुल: {total:F3} SAR*\n\n" +
-                "X  चेकआउट\n1  और उत्पाद\nC  कार्ट साफ़ करें\n0  वापस");
+                "X  चेकआउट\n1  और उत्पाद\nC  कार्ट साफ़ करें\n0  वापस\nS  एजेंट से जुड़ें");
         }
 
         private static string BuildNumberedList(
@@ -1274,6 +1322,7 @@ namespace crud_app_backend.Bot.Services
 
             sb.AppendLine();
             sb.AppendLine(backOption);
+            sb.AppendLine("S  Connect to Support Agent");
             return sb.ToString().TrimEnd();
         }
 

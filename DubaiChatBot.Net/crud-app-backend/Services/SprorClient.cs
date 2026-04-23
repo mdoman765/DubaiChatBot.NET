@@ -341,9 +341,9 @@ namespace crud_app_backend.Bot.Services
             {
                 var client = _factory.CreateClient("Spror");
 
-                // Bearer token (same pattern)
                 var token = _config["Spror:BearerToken"] ?? "224|IEcNubBv4Z9LoXpngVuHthRrSDdIlD0B4RGxNFqT";
 
+                // FIX 1: use subcatId parameter, not hardcoded 10113
                 var request = new HttpRequestMessage(HttpMethod.Get,
                     $"{BaseUrl}/sub-category/10113?cont_name={Uri.EscapeDataString(ContName)}");
 
@@ -365,45 +365,33 @@ namespace crud_app_backend.Bot.Services
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                // Handle: data.data[] OR data[]
-                if (!root.TryGetProperty("data", out var outerData))
+                // FIX 2: correct JSON path is root → data (object) → products (object) → data (array)
+                if (!root.TryGetProperty("data", out var dataEl) ||
+                    dataEl.ValueKind != JsonValueKind.Object)
                     return new();
 
-                JsonElement arr = default;
+                if (!dataEl.TryGetProperty("products", out var productsEl) ||
+                    productsEl.ValueKind != JsonValueKind.Object)
+                    return new();
 
-                if (outerData.ValueKind == JsonValueKind.Object &&
-                    outerData.TryGetProperty("data", out var innerArr) &&
-                    innerArr.ValueKind == JsonValueKind.Array)
-                {
-                    // paginated
-                    arr = innerArr;
-                }
-                else if (outerData.ValueKind == JsonValueKind.Array)
-                {
-                    // flat
-                    arr = outerData;
-                }
-
-                if (arr.ValueKind != JsonValueKind.Array) return new();
+                if (!productsEl.TryGetProperty("data", out var arr) ||
+                    arr.ValueKind != JsonValueKind.Array)
+                    return new();
 
                 var list = new List<SprorProduct>();
 
                 foreach (var item in arr.EnumerateArray())
                 {
-                    var id = S(item, "id");
-
-                    var name = S(item, "product_name");
-                    if (string.IsNullOrEmpty(name)) name = S(item, "name");
-
-                    var price = D(item, "product_price");
-                    var oldPrice = D(item, "productOldPrice");
-
-                    var code = S(item, "product_code");
-                    var imageUrl = S(item, "productImageUrl");
-
+                    // FIX 3: use actual field names from the API response
+                    var id = S(item, "id");           // numeric → S() uses .ToString(), works fine
+                    var name = S(item, "name");
+                    var price = D(item, "new_price");
+                    var oldPrice = D(item, "old_price");
+                    var code = S(item, "code");
+                    var imageUrl = S(item, "image");
                     var factor = I(item, "factor");
-                    var groupId = S(item, "groupId");
-                    var priceId = S(item, "priceId");
+                    var groupId = S(item, "group_id");
+                    var priceId = S(item, "price_id");
 
                     if (!string.IsNullOrEmpty(id) || !string.IsNullOrEmpty(name))
                     {
@@ -484,7 +472,16 @@ namespace crud_app_backend.Bot.Services
                 };
 
                 var client = _factory.CreateClient("Spror");
-                var resp = await client.PostAsJsonAsync($"{BaseUrl}/store-order", body, ct);
+
+                // Bearer token required — same as all other Spror endpoints
+                var token = _config["Spror:BearerToken"] ?? "224|IEcNubBv4Z9LoXpngVuHthRrSDdIlD0B4RGxNFqT";
+                var orderRequest = new HttpRequestMessage(HttpMethod.Post, $"{BaseUrl}/store-order")
+                {
+                    Content = JsonContent.Create(body)
+                };
+                orderRequest.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
+
+                var resp = await client.SendAsync(orderRequest, ct);
                 var json = await resp.Content.ReadAsStringAsync(ct);
 
                 _logger.LogInformation("[Spror] PlaceOrder {Code}: {Body}",
@@ -515,10 +512,23 @@ namespace crud_app_backend.Bot.Services
             try
             {
                 var client = _factory.CreateClient("Spror");
-                var resp = await client.GetAsync(
-                    $"{BaseUrl}/user/order-details/{shopUserId}", ct);
 
-                if (!resp.IsSuccessStatusCode) return "[]";
+                // Bearer token + cont_name required
+                var token = _config["Spror:BearerToken"] ?? "224|IEcNubBv4Z9LoXpngVuHthRrSDdIlD0B4RGxNFqT";
+                var request = new HttpRequestMessage(HttpMethod.Get,
+                    $"{BaseUrl}/user/order-details/{shopUserId}?cont_name={Uri.EscapeDataString(ContName)}");
+                request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
+
+                var resp = await client.SendAsync(request, ct);
+                _logger.LogInformation("[Spror] GetOrders {Code} userId={U}", (int)resp.StatusCode, shopUserId);
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var err = await resp.Content.ReadAsStringAsync(ct);
+                    _logger.LogWarning("[Spror] GetOrders failed {Code} body={B}", (int)resp.StatusCode, err);
+                    return "[]";
+                }
+
                 return await resp.Content.ReadAsStringAsync(ct);
             }
             catch (Exception ex)
